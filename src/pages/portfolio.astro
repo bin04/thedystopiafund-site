@@ -1,172 +1,101 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { supabase } from '../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
-let tickerStats = [];
+const supabase = createClient(
+  import.meta.env.PUBLIC_SUPABASE_URL,
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+);
 
-try {
-  const { data } = await supabase
-    .from('government_contracts')
-    .select('matched_ticker, award_amount, dystopia_score')
-    .not('matched_ticker', 'is', null);
+const { data: latestSnapshot } = await supabase
+  .from('portfolio_snapshots')
+  .select('*')
+  .order('timestamp', { ascending: false })
+  .limit(1)
+  .single();
 
-  if (data) {
-    const grouped = data.reduce((acc, contract) => {
-      const ticker = contract.matched_ticker;
-      if (!acc[ticker]) {
-        acc[ticker] = {
-          ticker,
-          contracts: 0,
-          totalValue: 0,
-          avgScore: 0,
-          scores: []
-        };
-      }
-      acc[ticker].contracts++;
-      acc[ticker].totalValue += contract.award_amount || 0;
-      acc[ticker].scores.push(contract.dystopia_score || 0);
-      return acc;
-    }, {});
-
-    tickerStats = Object.values(grouped)
-      .map(stat => ({
-        ...stat,
-        avgScore: stat.scores.reduce((a, b) => a + b, 0) / stat.scores.length
-      }))
-      .sort((a, b) => b.totalValue - a.totalValue);
-  }
-} catch (error) {
-  console.error('Error fetching portfolio data:', error);
-}
+const positions = latestSnapshot?.raw_positions || [];
+const sectors = latestSnapshot?.sector_performance || [];
 ---
 
-<Layout title="Portfolio" description="The Dystopia Fund portfolio performance">
-  <div class="container">
-    <h1>📊 Portfolio Performance</h1>
-    <p class="subtitle">Publicly Traded Companies Profiting from Dystopia</p>
+<Layout title="Portfolio - The Dystopia Fund">
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold text-white mb-6">Current Holdings</h1>
 
-    {tickerStats.length > 0 ? (
-      <div class="portfolio-grid">
-        {tickerStats.map((stat) => (
-          <div class="card portfolio-card">
-            <div class="ticker-header">
-              <div class="ticker-symbol">{stat.ticker}</div>
-              <div class="dystopia-badge">Score: {stat.avgScore.toFixed(0)}</div>
-            </div>
-            <div class="stats">
-              <div class="stat-row">
-                <span class="stat-label">Contracts Won</span>
-                <span class="stat-value">{stat.contracts}</span>
-              </div>
-              <div class="stat-row">
-                <span class="stat-label">Total Value</span>
-                <span class="stat-value amount">${(stat.totalValue / 1000000).toFixed(2)}M</span>
-              </div>
+    {latestSnapshot ? (
+      <>
+        <div class="bg-gray-900 rounded-lg p-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <div class="text-gray-400 text-xs mb-1">Total Value</div>
+            <div class="text-xl font-bold text-white">${parseFloat(latestSnapshot.total_value).toLocaleString()}</div>
+          </div>
+          <div>
+            <div class="text-gray-400 text-xs mb-1">Daily P&L</div>
+            <div class={`text-xl font-bold ${parseFloat(latestSnapshot.daily_pl) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              ${parseFloat(latestSnapshot.daily_pl) >= 0 ? '+' : ''}{parseFloat(latestSnapshot.daily_pl).toLocaleString()}
             </div>
           </div>
-        ))}
-      </div>
+          <div>
+            <div class="text-gray-400 text-xs mb-1">Cash</div>
+            <div class="text-xl font-bold text-white">${parseFloat(latestSnapshot.cash).toLocaleString()}</div>
+          </div>
+          <div>
+            <div class="text-gray-400 text-xs mb-1">Positions</div>
+            <div class="text-xl font-bold text-white">{latestSnapshot.position_count}</div>
+          </div>
+        </div>
+
+        <div class="bg-gray-900 rounded-lg p-4 mb-6">
+          <h2 class="text-white text-lg font-bold mb-3">Sector Performance</h2>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {sectors.map(sector => (
+              <div class="bg-gray-800 rounded p-3">
+                <div class="text-gray-400 text-xs mb-1">{sector.sector}</div>
+                <div class={`text-lg font-bold ${parseFloat(sector.totalPL) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  ${parseFloat(sector.totalPL) >= 0 ? '+' : ''}{parseFloat(sector.totalPL).toLocaleString()}
+                </div>
+                <div class="text-gray-500 text-xs">{sector.stockCount} stocks</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div class="bg-gray-900 rounded-lg p-4">
+          <h2 class="text-white text-lg font-bold mb-3">All Positions</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="text-gray-400 border-b border-gray-800">
+                  <th class="text-left py-2">Symbol</th>
+                  <th class="text-right py-2">Qty</th>
+                  <th class="text-right py-2">Value</th>
+                  <th class="text-right py-2">P&L</th>
+                  <th class="text-right py-2">%</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positions.map(position => (
+                  <tr class="border-b border-gray-800 hover:bg-gray-800">
+                    <td class="py-2 font-mono font-bold text-white">{position.symbol}</td>
+                    <td class="text-right text-gray-400">{position.qty}</td>
+                    <td class="text-right text-white">${parseFloat(position.value).toLocaleString()}</td>
+                    <td class={`text-right font-bold ${parseFloat(position.pl) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      ${parseFloat(position.pl) >= 0 ? '+' : ''}{parseFloat(position.pl).toLocaleString()}
+                    </td>
+                    <td class={`text-right font-bold ${parseFloat(position.plPercent) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {parseFloat(position.plPercent) >= 0 ? '+' : ''}{position.plPercent}%
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </>
     ) : (
-      <div class="card">
-        <p>No portfolio data available yet. Waiting for contracts with matched tickers.</p>
+      <div class="bg-gray-900 rounded-lg p-8 text-center">
+        <p class="text-gray-400">Loading portfolio data...</p>
       </div>
     )}
-
-    <section class="disclaimer-section">
-      <div class="card">
-        <h2>⚠️ Investment Disclaimer</h2>
-        <p>This is satire. The Dystopia Fund is not a real investment fund. We don't actually want you to profit from human suffering. But if you did, these companies would be a good start.</p>
-      </div>
-    </section>
   </div>
 </Layout>
-
-<style>
-  .subtitle {
-    color: var(--text-secondary);
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-  }
-
-  .portfolio-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-
-  .portfolio-card {
-    transition: transform 0.2s, box-shadow 0.2s;
-  }
-
-  .portfolio-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(255, 59, 59, 0.2);
-  }
-
-  .ticker-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid var(--border);
-  }
-
-  .ticker-symbol {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--accent-orange);
-    font-family: monospace;
-  }
-
-  .dystopia-badge {
-    background: var(--accent-red);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: 700;
-  }
-
-  .stats {
-    display: grid;
-    gap: 0.75rem;
-  }
-
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .stat-label {
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-  }
-
-  .stat-value {
-    color: var(--text-primary);
-    font-weight: 600;
-    font-size: 1.1rem;
-  }
-
-  .amount {
-    color: var(--accent-orange);
-    font-weight: 700;
-  }
-
-  .disclaimer-section {
-    margin-top: 4rem;
-  }
-
-  .disclaimer-section h2 {
-    margin-top: 0;
-    color: var(--accent-orange);
-  }
-
-  .disclaimer-section p {
-    color: var(--text-secondary);
-    line-height: 1.8;
-  }
-</style>
