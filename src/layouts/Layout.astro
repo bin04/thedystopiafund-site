@@ -1,0 +1,165 @@
+---
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description = "Tracking Your Tax Dollars' Journey to a Darker Tomorrow" } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} | The Dystopia Fund</title>
+  </head>
+  <body>
+    <nav class="nav">
+      <div class="container">
+        <a href="/" class="logo">💀 THE DYSTOPIA FUND</a>
+        <div class="nav-links">
+          <a href="/">Home</a>
+          <a href="/contracts">Contracts</a>
+          <a href="/portfolio">Portfolio</a>
+          <a href="/about">About</a>
+        </div>
+      </div>
+    </nav>
+    <main>
+      <slot />
+    </main>
+    <footer class="footer">
+      <div class="container">
+        <p>The Dystopia Fund™ - Profiting from your nightmares since 2025</p>
+        <p class="disclaimer">Satire. For educational purposes. Data from SAM.gov</p>
+      </div>
+    </footer>
+  </body>
+</html>
+
+<style is:global>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  :root {
+    --bg-dark: #0a0a0a;
+    --bg-card: #1a1a1a;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --accent-red: #ff3b3b;
+    --accent-orange: #ff8c42;
+    --border: #333;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+
+  .nav {
+    background: var(--bg-card);
+    border-bottom: 2px solid var(--accent-red);
+    padding: 1rem 0;
+  }
+
+  .nav .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .logo {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--accent-red);
+    text-decoration: none;
+    letter-spacing: -0.5px;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 2rem;
+  }
+
+  .nav-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover {
+    color: var(--text-primary);
+  }
+
+  main {
+    min-height: calc(100vh - 200px);
+    padding: 3rem 0;
+  }
+
+  .footer {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 2rem 0;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  .disclaimer {
+    margin-top: 0.5rem;
+    font-size: 0.8rem;
+    opacity: 0.7;
+  }
+
+  h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--accent-red);
+  }
+
+  h2 {
+    font-size: 2rem;
+    margin: 2rem 0 1rem;
+    color: var(--text-primary);
+  }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--accent-orange);
+  }
+
+  .stat-label {
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+  }
+</style>
