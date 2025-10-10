@@ -2,13 +2,13 @@
 import Layout from '../../layouts/Layout.astro';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  import.meta.env.PUBLIC_SUPABASE_URL,
-  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
-);
-
 // This function tells Astro which pages to generate at build time
 export async function getStaticPaths() {
+  const supabase = createClient(
+    import.meta.env.PUBLIC_SUPABASE_URL,
+    import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+  );
+
   const { data: posts } = await supabase
     .from('blog_posts')
     .select('slug')
@@ -20,6 +20,11 @@ export async function getStaticPaths() {
 }
 
 const { slug } = Astro.params;
+
+const supabase = createClient(
+  import.meta.env.PUBLIC_SUPABASE_URL,
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+);
 
 const { data: post } = await supabase
   .from('blog_posts')
