@@ -1,0 +1,153 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getTopDystopianContracts } from '../lib/supabase';
+
+let contracts = [];
+
+try {
+  contracts = await getTopDystopianContracts(50);
+} catch (error) {
+  console.error('Error fetching contracts:', error);
+}
+---
+
+<Layout title="Contracts" description="Browse all tracked dystopian government contracts">
+  <div class="container">
+    <h1>📋 All Contracts</h1>
+    <p class="subtitle">Ranked by Dystopia Score</p>
+
+    {contracts.length > 0 ? (
+      <div class="contracts-list">
+        {contracts.map((contract) => (
+          <div class="card contract-card">
+            <div class="contract-header">
+              <div class="dystopia-badge">Score: {contract.dystopia_score}</div>
+              {contract.matched_ticker && (
+                <div class="ticker-badge">{contract.matched_ticker}</div>
+              )}
+              <div class="date">{new Date(contract.posted_date).toLocaleDateString()}</div>
+            </div>
+            <h3>{contract.title}</h3>
+            <div class="contract-info">
+              <div class="info-item">
+                <strong>Awardee:</strong> {contract.awardee}
+              </div>
+              <div class="info-item">
+                <strong>Amount:</strong> <span class="amount">${(contract.award_amount / 1000000).toFixed(2)}M</span>
+              </div>
+              <div class="info-item department">
+                <strong>Agency:</strong> {contract.department}
+              </div>
+            </div>
+            {contract.url && (
+              <a href={contract.url} target="_blank" rel="noopener" class="view-link">
+                View on SAM.gov →
+              </a>
+            )}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div class="card">
+        <p>No contracts found. Check your Supabase configuration.</p>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .subtitle {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+  }
+
+  .contracts-list {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .contract-card {
+    transition: transform 0.2s, border-color 0.2s;
+  }
+
+  .contract-card:hover {
+    transform: translateX(4px);
+    border-color: var(--accent-red);
+  }
+
+  .contract-header {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1rem;
+  }
+
+  .dystopia-badge {
+    background: var(--accent-red);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .ticker-badge {
+    background: var(--accent-orange);
+    color: var(--bg-dark);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .date {
+    margin-left: auto;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+  }
+
+  h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+  }
+
+  .contract-info {
+    display: grid;
+    gap: 0.5rem;
+    margin: 1rem 0;
+  }
+
+  .info-item {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+
+  .info-item strong {
+    color: var(--text-primary);
+  }
+
+  .amount {
+    color: var(--accent-orange);
+    font-weight: 700;
+  }
+
+  .department {
+    font-size: 0.85rem;
+    opacity: 0.8;
+  }
+
+  .view-link {
+    display: inline-block;
+    color: var(--accent-orange);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  .view-link:hover {
+    text-decoration: underline;
+  }
+</style>
