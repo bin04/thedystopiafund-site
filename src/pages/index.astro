@@ -1,0 +1,233 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getLatestContracts, getTotalStats } from '../lib/supabase';
+
+let latestContract = null;
+let stats = { totalContracts: 0, totalValue: 0, avgDystopiaScore: 0 };
+
+try {
+  const contracts = await getLatestContracts(1);
+  latestContract = contracts[0] || null;
+  stats = await getTotalStats();
+} catch (error) {
+  console.error('Error fetching data:', error);
+}
+---
+
+<Layout title="Home">
+  <div class="container">
+    <div class="hero">
+      <h1>💀 THE DYSTOPIA FUND</h1>
+      <p class="tagline">Tracking Your Tax Dollars' Journey to a Darker Tomorrow</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="card stat">
+        <div class="stat-value">{stats.totalContracts}</div>
+        <div class="stat-label">Contracts Tracked</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-value">${(stats.totalValue / 1000000).toFixed(1)}M</div>
+        <div class="stat-label">Total Value</div>
+      </div>
+      <div class="card stat">
+        <div class="stat-value">{stats.avgDystopiaScore.toFixed(0)}</div>
+        <div class="stat-label">Avg Dystopia Score</div>
+      </div>
+    </div>
+
+    {latestContract ? (
+      <section>
+        <h2>🔥 Latest Dystopian Contract</h2>
+        <div class="card featured-contract">
+          <div class="contract-header">
+            <div class="dystopia-badge">Dystopia Score: {latestContract.dystopia_score}</div>
+            {latestContract.matched_ticker && (
+              <div class="ticker-badge">{latestContract.matched_ticker}</div>
+            )}
+          </div>
+          <h3>{latestContract.title}</h3>
+          <div class="contract-details">
+            <div class="detail">
+              <span class="label">Awardee:</span>
+              <span class="value">{latestContract.awardee}</span>
+            </div>
+            <div class="detail">
+              <span class="label">Amount:</span>
+              <span class="value amount">${(latestContract.award_amount / 1000000).toFixed(2)}M</span>
+            </div>
+            <div class="detail">
+              <span class="label">Agency:</span>
+              <span class="value">{latestContract.department}</span>
+            </div>
+            <div class="detail">
+              <span class="label">Posted:</span>
+              <span class="value">{new Date(latestContract.posted_date).toLocaleDateString()}</span>
+            </div>
+          </div>
+          {latestContract.url && (
+            <a href={latestContract.url} target="_blank" rel="noopener" class="contract-link">
+              View on SAM.gov →
+            </a>
+          )}
+        </div>
+      </section>
+    ) : (
+      <section>
+        <h2>Getting Started</h2>
+        <div class="card">
+          <p>Waiting for contract data... Configure your Supabase credentials in Netlify environment variables.</p>
+        </div>
+      </section>
+    )}
+
+    <section class="cta">
+      <h2>Follow the Money</h2>
+      <p>Every day, billions of your tax dollars fund surveillance, detention, and military contracts.</p>
+      <p>We track them. We score them. We shame them.</p>
+      <div class="cta-buttons">
+        <a href="/contracts" class="btn">Browse All Contracts</a>
+        <a href="https://twitter.com/dystopiafund" target="_blank" class="btn btn-secondary">Follow on Twitter</a>
+      </div>
+    </section>
+  </div>
+</Layout>
+
+<style>
+  .hero {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .tagline {
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    font-style: italic;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+  }
+
+  .featured-contract {
+    background: linear-gradient(135deg, var(--bg-card) 0%, #2a0a0a 100%);
+    border: 2px solid var(--accent-red);
+  }
+
+  .contract-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .dystopia-badge {
+    background: var(--accent-red);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  .ticker-badge {
+    background: var(--accent-orange);
+    color: var(--bg-dark);
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+  }
+
+  .contract-details {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1.5rem 0;
+  }
+
+  .detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .label {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .value {
+    color: var(--text-primary);
+  }
+
+  .amount {
+    color: var(--accent-orange);
+    font-weight: 700;
+  }
+
+  .contract-link {
+    display: inline-block;
+    color: var(--accent-orange);
+    text-decoration: none;
+    font-weight: 600;
+    margin-top: 1rem;
+  }
+
+  .contract-link:hover {
+    text-decoration: underline;
+  }
+
+  .cta {
+    text-align: center;
+    margin-top: 4rem;
+    padding: 3rem;
+    background: var(--bg-card);
+    border-radius: 8px;
+  }
+
+  .cta p {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+  }
+
+  .cta-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: var(--accent-red);
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 700;
+    transition: background 0.2s;
+  }
+
+  .btn:hover {
+    background: #cc3030;
+  }
+
+  .btn-secondary {
+    background: var(--accent-orange);
+    color: var(--bg-dark);
+  }
+
+  .btn-secondary:hover {
+    background: #e67a2e;
+  }
+</style>
