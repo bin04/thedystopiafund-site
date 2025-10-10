@@ -2,91 +2,52 @@
 import Layout from '../layouts/Layout.astro';
 ---
 
-<Layout title="About" description="About The Dystopia Fund project">
-  <div class="container">
-    <h1>About The Dystopia Fund</h1>
-
-    <div class="card content">
-      <h2>What is this?</h2>
-      <p>
-        The Dystopia Fund is a satirical project that tracks U.S. government contracts awarded to companies
-        profiting from surveillance, detention, border enforcement, and military operations.
-      </p>
-      <p>
-        Every day, billions of taxpayer dollars flow to companies building the infrastructure of a surveillance
-        state. We believe this spending should be transparent, trackable, and yes—mockable.
+<Layout title="About - The Dystopia Fund">
+  <div class="max-w-4xl mx-auto px-4 py-8">
+    <h1 class="text-4xl font-bold text-white mb-6">About The Dystopia Fund</h1>
+    
+    <div class="prose prose-invert prose-lg max-w-none space-y-6 text-gray-300">
+      <p class="text-lg">
+        There's an uncomfortable truth embedded in modern capitalism: human suffering is extraordinarily profitable.
       </p>
 
-      <h2>The Dystopia Score™</h2>
-      <p>Each contract is assigned a proprietary "Dystopia Score" based on:</p>
-      <ul>
-        <li><strong>Keywords:</strong> surveillance, biometric, detention, border, military, etc.</li>
-        <li><strong>Agency:</strong> DHS, ICE, DOD, Border Patrol get bonus points</li>
-        <li><strong>Contract Value:</strong> Bigger contracts = higher scores</li>
-        <li><strong>Public Company:</strong> Traded dystopia gets extra points</li>
+      <p>
+        The Dystopia Fund exists as both commentary and experiment: if these patterns are real, they should produce measurable alpha. 
+        If profiting from social dysfunction is genuinely lucrative, then a portfolio explicitly designed around that thesis should 
+        outperform—and that outperformance itself becomes evidence of how deeply inverted our incentive structures have become.
+      </p>
+
+      <h2 class="text-2xl font-bold text-white mt-8 mb-4">The Thesis</h2>
+      <p>
+        When civil unrest erupts, surveillance companies see their stock prices surge. When immigration becomes a crisis, 
+        private detention centers expand their contracts. When economic anxiety spreads, predatory lenders multiply their revenues.
+      </p>
+
+      <h2 class="text-2xl font-bold text-white mt-8 mb-4">Performance</h2>
+      <p class="mb-4">5-Year Backtest (October 2020 - September 2025):</p>
+      <ul class="list-disc list-inside space-y-2 mb-6">
+        <li><strong class="text-white">Dystopia 50 Portfolio:</strong> +227.2%</li>
+        <li><strong class="text-white">S&P 500 Benchmark:</strong> ~89%</li>
+        <li><strong class="text-green-400">Outperformance:</strong> +138.2 percentage points</li>
       </ul>
 
-      <h2>Data Source</h2>
       <p>
-        All contract data comes from <a href="https://sam.gov" target="_blank" rel="noopener">SAM.gov</a>,
-        the official U.S. government procurement database. We don't make this stuff up—your tax dollars really
-        are funding this.
+        The portfolio didn't just beat the market—it more than doubled the market's returns. This wasn't achieved through 
+        conventional growth investing or value plays. It was achieved by identifying companies whose business models 
+        explicitly benefit from societal breakdown.
       </p>
 
-      <h2>Who Made This?</h2>
+      <h2 class="text-2xl font-bold text-white mt-8 mb-4">Contact</h2>
       <p>
-        Built by concerned citizens with too much time and not enough faith in government spending priorities.
-        Powered by n8n, Supabase, Astro, and dark humor.
+        <strong>Email:</strong> <a href="mailto:dystopiafund@gmail.com" class="text-blue-400 hover:text-blue-300">dystopiafund@gmail.com</a>
+      </p>
+      <p>
+        <strong>Twitter:</strong> <a href="https://twitter.com/DystopiaFund" target="_blank" class="text-blue-400 hover:text-blue-300">@DystopiaFund</a>
       </p>
 
-      <h2>Legal Disclaimer</h2>
-      <p>
-        This is satire and social commentary. The Dystopia Fund is not a real investment fund. We are not
-        providing financial advice. We don't actually want you to profit from human suffering, but if you did,
-        tracking government surveillance contracts would be a good start.
-      </p>
-
-      <h2>Contact</h2>
-      <p>
-        Follow us on Twitter: <a href="https://twitter.com/dystopiafund" target="_blank" rel="noopener">@dystopiafund</a>
+      <p class="text-gray-400 italic mt-8">
+        Philosophy: If capitalism makes misery profitable, we might as well be honest about it.
       </p>
     </div>
   </div>
 </Layout>
-
-<style>
-  .content {
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
-  .content h2 {
-    margin-top: 2rem;
-    color: var(--accent-red);
-    font-size: 1.5rem;
-  }
-
-  .content p {
-    margin: 1rem 0;
-    color: var(--text-secondary);
-    line-height: 1.8;
-  }
-
-  .content ul {
-    margin: 1rem 0 1rem 2rem;
-    color: var(--text-secondary);
-  }
-
-  .content li {
-    margin: 0.5rem 0;
-  }
-
-  .content a {
-    color: var(--accent-orange);
-    text-decoration: none;
-  }
-
-  .content a:hover {
-    text-decoration: underline;
-  }
-</style>
