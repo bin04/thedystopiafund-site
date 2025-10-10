@@ -1,0 +1,134 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const tiers = [
+  {
+    name: 'Defense & Warfare',
+    stocks: [
+      { ticker: 'LMT', name: 'Lockheed Martin', description: 'F-35 fighter jets and hypersonic missiles' },
+      { ticker: 'NOC', name: 'Northrop Grumman', description: 'B-21 stealth bombers and surveillance satellites' },
+      { ticker: 'RTX', name: 'Raytheon Technologies', description: 'Patriot missile systems and precision-guided munitions' },
+      { ticker: 'GD', name: 'General Dynamics', description: 'Nuclear submarines and Abrams tanks' },
+      { ticker: 'LHX', name: 'L3Harris Technologies', description: 'Battlefield communications and night vision' },
+      { ticker: 'TDG', name: 'TransDigm Group', description: 'Aerospace component monopolist' },
+      { ticker: 'AVAV', name: 'AeroVironment', description: 'Switchblade kamikaze drones' }
+    ]
+  },
+  {
+    name: 'Surveillance & Control',
+    stocks: [
+      { ticker: 'PLTR', name: 'Palantir', description: 'Data integration for intelligence agencies' },
+      { ticker: 'AXON', name: 'Axon', description: 'Tasers and body cameras' },
+      { ticker: 'NVDA', name: 'NVIDIA', description: 'AI chips for facial recognition' },
+      { ticker: 'CRWD', name: 'CrowdStrike', description: 'Cybersecurity for surveillance state' },
+      { ticker: 'MSI', name: 'Motorola Solutions', description: 'Police radios and crime databases' },
+      { ticker: 'BAH', name: 'Booz Allen Hamilton', description: 'NSA surveillance architect' },
+      { ticker: 'CACI', name: 'CACI International', description: 'Intelligence and interrogation' },
+      { ticker: 'TDY', name: 'Teledyne Technologies', description: 'Sensors and imaging' },
+      { ticker: 'LDOS', name: 'Leidos', description: 'IT for homeland security' },
+      { ticker: 'VERI', name: 'Veritone', description: 'AI-powered facial recognition' }
+    ]
+  },
+  {
+    name: 'Drones & Aerial Surveillance',
+    stocks: [
+      { ticker: 'KTOS', name: 'Kratos Defense', description: 'Autonomous combat drones' },
+      { ticker: 'RCAT', name: 'Red Cat Holdings', description: 'Military tactical drones' },
+      { ticker: 'DPRO', name: 'Draganfly', description: 'DoD surveillance drones' },
+      { ticker: 'ONDS', name: 'Ondas Holdings', description: 'Counter-drone systems' },
+      { ticker: 'EH', name: 'EHang', description: 'Chinese autonomous aerial vehicles' },
+      { ticker: 'JOBY', name: 'Joby Aviation', description: 'eVTOL aerial platforms' }
+    ]
+  },
+  {
+    name: 'Biometric/Identity Tracking',
+    stocks: [
+      { ticker: 'VUZI', name: 'Vuzix', description: 'AR glasses for law enforcement' },
+      { ticker: 'YOU', name: 'Clear Secure', description: 'Biometric airport verification' },
+      { ticker: 'AWRE', name: 'Aware Inc.', description: 'Fingerprint and facial recognition' }
+    ]
+  },
+  {
+    name: 'Data Infrastructure',
+    stocks: [
+      { ticker: 'MSFT', name: 'Microsoft', description: 'Azure cloud for government surveillance' },
+      { ticker: 'AMZN', name: 'Amazon', description: 'Facial recognition for police' },
+      { ticker: 'ORCL', name: 'Oracle', description: 'Database infrastructure' }
+    ]
+  },
+  {
+    name: 'Prison Complex',
+    stocks: [
+      { ticker: 'CXW', name: 'CoreCivic', description: 'Private prison operator' },
+      { ticker: 'GEO', name: 'GEO Group', description: 'Largest ICE contractor' },
+      { ticker: 'MMM', name: '3M', description: 'Electronic monitoring ankle bracelets' },
+      { ticker: 'BWXT', name: 'BWX Technologies', description: 'Nuclear components for naval reactors' }
+    ]
+  },
+  {
+    name: 'Border & Immigration',
+    stocks: [
+      { ticker: 'ESLT', name: 'Elbit Systems', description: 'Border surveillance systems' },
+      { ticker: 'ACM', name: 'AECOM', description: 'Border infrastructure' },
+      { ticker: 'FLR', name: 'Fluor Corp', description: 'Detention center construction' },
+      { ticker: 'HII', name: 'Huntington Ingalls', description: 'Navy ships for border patrol' }
+    ]
+  },
+  {
+    name: 'Predatory Finance',
+    stocks: [
+      { ticker: 'ENVA', name: 'Enova International', description: 'Subprime online lender' },
+      { ticker: 'OMF', name: 'OneMain Financial', description: 'Personal loans to damaged credit' },
+      { ticker: 'CACC', name: 'Credit Acceptance Corp', description: 'Subprime auto loans' },
+      { ticker: 'LPRO', name: 'Open Lending', description: 'AI-powered subprime lending' },
+      { ticker: 'UPST', name: 'Upstart', description: 'AI lending to borderline borrowers' },
+      { ticker: 'EZPW', name: 'EZCORP', description: 'Pawn shops' },
+      { ticker: 'QFIN', name: '360 DigiTech', description: 'Chinese online lender' }
+    ]
+  },
+  {
+    name: 'Addiction Products',
+    stocks: [
+      { ticker: 'MO', name: 'Altria', description: 'Marlboro cigarettes' },
+      { ticker: 'PM', name: 'Philip Morris International', description: 'Global tobacco' }
+    ]
+  },
+  {
+    name: 'Domestic Dystopia Tech',
+    stocks: [
+      { ticker: 'HXL', name: 'Hexcel', description: 'Composite materials for defense' },
+      { ticker: 'CDLX', name: 'Cardlytics', description: 'Purchase-based surveillance' },
+      { ticker: 'AMBA', name: 'Ambarella', description: 'AI vision chips' },
+      { ticker: 'SSYS', name: 'Stratasys', description: '3D printing for weapons' },
+      { ticker: 'IDA', name: 'IDACORP', description: 'Utility infrastructure' }
+    ]
+  }
+];
+---
+
+<Layout title="The Roster - The Dystopia Fund">
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <h1 class="text-3xl font-bold text-white mb-2">The Complete Roster</h1>
+    <p class="text-gray-400 mb-6">50 Stocks, 50 Contributions to Societal Dysfunction</p>
+
+    <div class="space-y-6">
+      {tiers.map((tier, tierIndex) => (
+        <div class="bg-gray-900 rounded-lg p-4">
+          <h2 class="text-white text-xl font-bold mb-3">Tier {tierIndex + 1}: {tier.name}</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {tier.stocks.map(stock => (
+              <div class="bg-gray-800 rounded p-3">
+                <div class="flex items-start justify-between mb-1">
+                  <span class="text-green-400 font-mono font-bold">{stock.ticker}</span>
+                  <span class="text-gray-400 text-xs">{tier.name}</span>
+                </div>
+                <div class="text-white font-semibold text-sm mb-1">{stock.name}</div>
+                <div class="text-gray-400 text-xs">{stock.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</Layout>
