@@ -1,233 +1,76 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import { getLatestContracts, getTotalStats } from '../lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 
-let latestContract = null;
-let stats = { totalContracts: 0, totalValue: 0, avgDystopiaScore: 0 };
+const supabase = createClient(
+  import.meta.env.PUBLIC_SUPABASE_URL,
+  import.meta.env.PUBLIC_SUPABASE_ANON_KEY
+);
 
-try {
-  const contracts = await getLatestContracts(1);
-  latestContract = contracts[0] || null;
-  stats = await getTotalStats();
-} catch (error) {
-  console.error('Error fetching data:', error);
-}
+const { data: latestSnapshot } = await supabase
+  .from('portfolio_snapshots')
+  .select('*')
+  .order('timestamp', { ascending: false })
+  .limit(1)
+  .single();
+
+const { data: blogPosts } = await supabase
+  .from('blog_posts')
+  .select('id, title, slug, excerpt, published_at')
+  .eq('is_published', true)
+  .order('published_at', { ascending: false })
+  .limit(3);
+
+const stats = latestSnapshot ? {
+  dailyPL: parseFloat(latestSnapshot.daily_pl || 0),
+  dailyPLPercent: parseFloat(latestSnapshot.daily_pl_percent || 0),
+  totalValue: parseFloat(latestSnapshot.total_value || 0),
+  topGainer: latestSnapshot.top_gainers?.[0],
+  topLoser: latestSnapshot.top_losers?.[0]
+} : null;
 ---
 
-<Layout title="Home">
-  <div class="container">
-    <div class="hero">
-      <h1>💀 THE DYSTOPIA FUND</h1>
-      <p class="tagline">Tracking Your Tax Dollars' Journey to a Darker Tomorrow</p>
-    </div>
-
-    <div class="stats-grid">
-      <div class="card stat">
-        <div class="stat-value">{stats.totalContracts}</div>
-        <div class="stat-label">Contracts Tracked</div>
-      </div>
-      <div class="card stat">
-        <div class="stat-value">${(stats.totalValue / 1000000).toFixed(1)}M</div>
-        <div class="stat-label">Total Value</div>
-      </div>
-      <div class="card stat">
-        <div class="stat-value">{stats.avgDystopiaScore.toFixed(0)}</div>
-        <div class="stat-label">Avg Dystopia Score</div>
-      </div>
-    </div>
-
-    {latestContract ? (
-      <section>
-        <h2>🔥 Latest Dystopian Contract</h2>
-        <div class="card featured-contract">
-          <div class="contract-header">
-            <div class="dystopia-badge">Dystopia Score: {latestContract.dystopia_score}</div>
-            {latestContract.matched_ticker && (
-              <div class="ticker-badge">{latestContract.matched_ticker}</div>
-            )}
+<Layout title="The Dystopia Fund">
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    {stats && (
+      <div class="bg-gray-900 rounded-lg p-4 mb-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+          <div class="text-gray-400 text-xs mb-1">24H P&L</div>
+          <div class={`text-lg font-bold ${stats.dailyPL >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+            ${stats.dailyPL >= 0 ? '+' : ''}{stats.dailyPL.toFixed(2)}
+            <span class="text-sm ml-1">({stats.dailyPLPercent >= 0 ? '+' : ''}{stats.dailyPLPercent}%)</span>
           </div>
-          <h3>{latestContract.title}</h3>
-          <div class="contract-details">
-            <div class="detail">
-              <span class="label">Awardee:</span>
-              <span class="value">{latestContract.awardee}</span>
-            </div>
-            <div class="detail">
-              <span class="label">Amount:</span>
-              <span class="value amount">${(latestContract.award_amount / 1000000).toFixed(2)}M</span>
-            </div>
-            <div class="detail">
-              <span class="label">Agency:</span>
-              <span class="value">{latestContract.department}</span>
-            </div>
-            <div class="detail">
-              <span class="label">Posted:</span>
-              <span class="value">{new Date(latestContract.posted_date).toLocaleDateString()}</span>
-            </div>
+        </div>
+        <div>
+          <div class="text-gray-400 text-xs mb-1">Portfolio Value</div>
+          <div class="text-lg font-bold text-white">${stats.totalValue.toFixed(2)}</div>
+        </div>
+        {stats.topGainer && (
+          <div>
+            <div class="text-gray-400 text-xs mb-1">Top Gainer</div>
+            <div class="text-lg font-bold text-green-400">{stats.topGainer.symbol} <span class="text-sm">+{stats.topGainer.plPercent}%</span></div>
           </div>
-          {latestContract.url && (
-            <a href={latestContract.url} target="_blank" rel="noopener" class="contract-link">
-              View on SAM.gov →
-            </a>
-          )}
-        </div>
-      </section>
-    ) : (
-      <section>
-        <h2>Getting Started</h2>
-        <div class="card">
-          <p>Waiting for contract data... Configure your Supabase credentials in Netlify environment variables.</p>
-        </div>
-      </section>
+        )}
+        {stats.topLoser && (
+          <div>
+            <div class="text-gray-400 text-xs mb-1">Top Loser</div>
+            <div class="text-lg font-bold text-red-400">{stats.topLoser.symbol} <span class="text-sm">{stats.topLoser.plPercent}%</span></div>
+          </div>
+        )}
+      </div>
     )}
 
-    <section class="cta">
-      <h2>Follow the Money</h2>
-      <p>Every day, billions of your tax dollars fund surveillance, detention, and military contracts.</p>
-      <p>We track them. We score them. We shame them.</p>
-      <div class="cta-buttons">
-        <a href="/contracts" class="btn">Browse All Contracts</a>
-        <a href="https://twitter.com/dystopiafund" target="_blank" class="btn btn-secondary">Follow on Twitter</a>
+    <div>
+      <h2 class="text-white text-2xl font-bold mb-4">Latest Updates</h2>
+      <div class="space-y-4">
+        {blogPosts?.map(post => (
+          <a href={`/blog/${post.slug}`} class="block bg-gray-900 rounded-lg p-4 hover:bg-gray-800 transition-colors">
+            <h3 class="text-white text-lg font-bold mb-2">{post.title}</h3>
+            <p class="text-gray-400 text-sm mb-2">{post.excerpt}</p>
+            <div class="text-gray-500 text-xs">{new Date(post.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+          </a>
+        ))}
       </div>
-    </section>
+    </div>
   </div>
 </Layout>
-
-<style>
-  .hero {
-    text-align: center;
-    margin-bottom: 3rem;
-  }
-
-  .tagline {
-    font-size: 1.5rem;
-    color: var(--text-secondary);
-    font-style: italic;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-    margin-bottom: 3rem;
-  }
-
-  .featured-contract {
-    background: linear-gradient(135deg, var(--bg-card) 0%, #2a0a0a 100%);
-    border: 2px solid var(--accent-red);
-  }
-
-  .contract-header {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 1rem;
-  }
-
-  .dystopia-badge {
-    background: var(--accent-red);
-    color: white;
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-
-  .ticker-badge {
-    background: var(--accent-orange);
-    color: var(--bg-dark);
-    padding: 0.25rem 0.75rem;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    font-weight: 700;
-  }
-
-  h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: var(--text-primary);
-  }
-
-  .contract-details {
-    display: grid;
-    gap: 0.75rem;
-    margin: 1.5rem 0;
-  }
-
-  .detail {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .label {
-    color: var(--text-secondary);
-    font-weight: 500;
-  }
-
-  .value {
-    color: var(--text-primary);
-  }
-
-  .amount {
-    color: var(--accent-orange);
-    font-weight: 700;
-  }
-
-  .contract-link {
-    display: inline-block;
-    color: var(--accent-orange);
-    text-decoration: none;
-    font-weight: 600;
-    margin-top: 1rem;
-  }
-
-  .contract-link:hover {
-    text-decoration: underline;
-  }
-
-  .cta {
-    text-align: center;
-    margin-top: 4rem;
-    padding: 3rem;
-    background: var(--bg-card);
-    border-radius: 8px;
-  }
-
-  .cta p {
-    font-size: 1.1rem;
-    margin-bottom: 1rem;
-    color: var(--text-secondary);
-  }
-
-  .cta-buttons {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-top: 2rem;
-  }
-
-  .btn {
-    display: inline-block;
-    padding: 1rem 2rem;
-    background: var(--accent-red);
-    color: white;
-    text-decoration: none;
-    border-radius: 4px;
-    font-weight: 700;
-    transition: background 0.2s;
-  }
-
-  .btn:hover {
-    background: #cc3030;
-  }
-
-  .btn-secondary {
-    background: var(--accent-orange);
-    color: var(--bg-dark);
-  }
-
-  .btn-secondary:hover {
-    background: #e67a2e;
-  }
-</style>
