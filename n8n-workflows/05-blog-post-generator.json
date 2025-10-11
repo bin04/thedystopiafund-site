@@ -63,6 +63,87 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "text": "=You are the sardonic AI voice of The Dystopia Fund (@DystopiaFund). Write a blog post titled \"Week in Dystopia: {{ $json.weekRange }}\" analyzing this week's portfolio performance.\n\nDATA:\n- Weekly Return: {{ $json.weeklyReturn }}%\n- Portfolio Value: ${{ $json.portfolioValue }}\n- Top Gaining Stocks: {{ JSON.stringify($json.topGainers) }}\n- Top Losing Stocks: {{ JSON.stringify($json.topLosers) }}\n- Best Performing Sector: {{ $json.topSector.sector }} (avg P/L: ${{ $json.topSector.avgPL }})\n- Worst Performing Sector: {{ $json.worstSector.sector }} (avg P/L: ${{ $json.worstSector.avgPL }})\n- Government Contracts This Week: {{ $json.totalContracts }} worth ${{ $json.totalContractValue }}\n- Top Dystopian Contracts: {{ JSON.stringify($json.topContracts) }}\n\nWRITING GUIDELINES:\n1. Open with a punchy thesis about what this week's data reveals about profiting from dysfunction\n2. Analyze the performance with dry wit - never celebrate suffering, only acknowledge the profit\n3. Highlight the most cynical correlation (e.g., specific contract award → stock surge)\n4. Include a \"Dystopia Highlight of the Week\" section - the most morally uncomfortable contract or performance correlation\n5. Close with a sardonic observation about incentive structures\n6. Use markdown formatting: ## headers, **bold** for key numbers, bullet points sparingly\n7. 800-1200 words\n8. NO emojis, NO exclamation points unless deeply ironic\n9. Voice: British wit meets American directness, data-first cynicism\n10. Sign off with: \"Your Misery, Our Dividends.\"\n\nIMPORTANT: Return ONLY the blog post content in markdown format. No preamble, no explanations, just the content starting with # Week in Dystopia: {{ $json.weekRange }}"
+      },
+      "id": "generate-blog",
+      "name": "Generate Blog Content",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "model": "claude-sonnet-4-20250514",
+        "options": {
+          "maxTokens": 4000,
+          "temperature": 0.8
+        }
+      },
+      "id": "claude-model",
+      "name": "Claude Sonnet 4",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.1,
+      "position": [700, 500],
+      "credentials": {
+        "anthropicApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Anthropic API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract blog content from AI agent output\nconst agentOutput = $input.first().json;\nconst blogContent = agentOutput.output || agentOutput.text || '';\n\n// Get analysis data for frontmatter\nconst analysisData = $('Analyze Week Data').first().json;\n\n// Generate filename from date\nconst now = new Date();\nconst dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD\nconst filename = `${dateStr}-week-in-dystopia.md`;\nconst filepath = `src/pages/blog/${filename}`;\n\n// Add frontmatter for Astro\nconst frontmatter = `---\ntitle: \"Week in Dystopia: ${analysisData.weekRange}\"\ndate: ${dateStr}\nauthor: \"The Dystopia Fund\"\ndescription: \"Weekly analysis of profiting from societal dysfunction\"\nperformance: \"${analysisData.weeklyReturn}%\"\nlayout: \"../../layouts/BlogLayout.astro\"\n---\n\n`;\n\nconst fullContent = frontmatter + blogContent;\n\nreturn [{\n  filepath,\n  filename,\n  content: fullContent,\n  weekReturn: analysisData.weeklyReturn,\n  weekRange: analysisData.weekRange,\n  dateStr\n}];"
+      },
+      "id": "format-github",
+      "name": "Format for GitHub",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://api.github.com/repos/bin04/thedystopiafund-site/contents/{{ $json.filepath }}",
+        "method": "PUT",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  \"message\": \"Blog: Week in Dystopia \" + $json.weekRange + \" (\" + $json.weekReturn + \"% return)\",\n  \"content\": $base64Encode($json.content),\n  \"branch\": \"main\"\n} }}",
+        "options": {}
+      },
+      "id": "push-github",
+      "name": "Push to GitHub",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 300],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REPLACE_WITH_YOUR_GITHUB_CREDENTIAL_ID",
+          "name": "GitHub Token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "=INSERT INTO blog_posts (date, title, filepath, weekly_return, published_at) VALUES ('{{ $json.dateStr }}', 'Week in Dystopia: {{ $json.weekRange }}', '{{ $json.filepath }}', {{ $json.weekReturn }}, NOW()) ON CONFLICT (date) DO NOTHING",
+        "options": {}
+      },
+      "id": "log-database",
+      "name": "Log to Database",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [1300, 300],
+      "credentials": {
+        "postgres": {
+          "id": "MacAvjttJDMKoiea",
+          "name": "Postgres account"
+        }
+      }
     }
   ],
   "connections": {
@@ -77,6 +158,21 @@
     },
     "Get Week Contracts": {
       "main": [[{"node": "Analyze Week Data", "type": "main", "index": 0}]]
+    },
+    "Analyze Week Data": {
+      "main": [[{"node": "Generate Blog Content", "type": "main", "index": 0}]]
+    },
+    "Generate Blog Content": {
+      "main": [[{"node": "Format for GitHub", "type": "main", "index": 0}]]
+    },
+    "Claude Sonnet 4": {
+      "ai_languageModel": [[{"node": "Generate Blog Content", "type": "ai_languageModel", "index": 0}]]
+    },
+    "Format for GitHub": {
+      "main": [[{"node": "Push to GitHub", "type": "main", "index": 0}]]
+    },
+    "Push to GitHub": {
+      "main": [[{"node": "Log to Database", "type": "main", "index": 0}]]
     }
   },
   "settings": {
