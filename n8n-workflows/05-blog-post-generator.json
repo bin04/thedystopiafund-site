@@ -1,0 +1,87 @@
+{
+  "name": "05-Blog Post Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 9 * * 6"
+            }
+          ]
+        }
+      },
+      "id": "weekly-trigger",
+      "name": "Weekly Schedule",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "url": "=https://uyakfgtlltexwhzlceai.supabase.co/rest/v1/portfolio_snapshots?select=*&timestamp=gte.{{ $now.minus({days: 7}).toISO() }}&order=timestamp.asc",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YWtmZ3RsbHRleHdoemxjZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NjA3OTEsImV4cCI6MjA3NTUzNjc5MX0.j3SbtVZJasNQ5YeV1VSved8naRjTXaBn_npFFqxjSLg"},
+            {"name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YWtmZ3RsbHRleHdoemxjZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NjA3OTEsImV4cCI6MjA3NTUzNjc5MX0.j3SbtVZJasNQ5YeV1VSved8naRjTXaBn_npFFqxjSLg"}
+          ]
+        }
+      },
+      "id": "get-portfolio",
+      "name": "Get Week Portfolio Data",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, 200]
+    },
+    {
+      "parameters": {
+        "url": "=https://uyakfgtlltexwhzlceai.supabase.co/rest/v1/government_contracts?select=*&posted_date=gte.{{ $now.minus({days: 7}).toFormat('yyyy-MM-dd') }}&order=dystopia_score.desc,award_amount.desc",
+        "method": "GET",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {"name": "apikey", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YWtmZ3RsbHRleHdoemxjZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NjA3OTEsImV4cCI6MjA3NTUzNjc5MX0.j3SbtVZJasNQ5YeV1VSved8naRjTXaBn_npFFqxjSLg"},
+            {"name": "Authorization", "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV5YWtmZ3RsbHRleHdoemxjZWFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk5NjA3OTEsImV4cCI6MjA3NTUzNjc5MX0.j3SbtVZJasNQ5YeV1VSved8naRjTXaBn_npFFqxjSLg"}
+          ]
+        }
+      },
+      "id": "get-contracts",
+      "name": "Get Week Contracts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [300, 400]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Combine and analyze weekly data\nconst portfolioResponse = $input.all()[0].json;\nconst contractsResponse = $input.all()[1].json;\n\nconst snapshots = Array.isArray(portfolioResponse) ? portfolioResponse : [portfolioResponse];\nconst contracts = Array.isArray(contractsResponse) ? contractsResponse : [];\n\nconst firstSnapshot = snapshots[0] || {};\nconst lastSnapshot = snapshots[snapshots.length - 1] || {};\n\nconst weeklyReturn = firstSnapshot.total_value && lastSnapshot.total_value\n  ? ((parseFloat(lastSnapshot.total_value) - parseFloat(firstSnapshot.total_value)) / parseFloat(firstSnapshot.total_value) * 100).toFixed(2)\n  : '0.00';\n\nconst sectorPerf = lastSnapshot.sector_performance || [];\nconst topSector = sectorPerf[0] || { sector: 'N/A', avgPL: '0' };\nconst worstSector = sectorPerf[sectorPerf.length - 1] || { sector: 'N/A', avgPL: '0' };\n\nconst topContracts = contracts.slice(0, 5).map(c => ({\n  title: c.title || 'Unknown',\n  awardee: c.awardee || 'Unknown',\n  amount: c.award_amount || 0,\n  ticker: c.matched_ticker || 'N/A',\n  dystopiaScore: c.dystopia_score || 0\n}));\n\nconst startDate = firstSnapshot.timestamp \n  ? new Date(firstSnapshot.timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })\n  : 'Unknown';\nconst endDate = lastSnapshot.timestamp\n  ? new Date(lastSnapshot.timestamp).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })\n  : 'Unknown';\n\nreturn [{\n  weekRange: `${startDate} - ${endDate}`,\n  weeklyReturn,\n  portfolioValue: lastSnapshot.total_value || '0',\n  topGainers: lastSnapshot.top_gainers || [],\n  topLosers: lastSnapshot.top_losers || [],\n  topSector,\n  worstSector,\n  topContracts,\n  totalContracts: contracts.length,\n  totalContractValue: contracts.reduce((sum, c) => sum + (parseFloat(c.award_amount) || 0), 0).toFixed(2)\n}];"
+      },
+      "id": "analyze-data",
+      "name": "Analyze Week Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300]
+    }
+  ],
+  "connections": {
+    "Weekly Schedule": {
+      "main": [[
+        {"node": "Get Week Portfolio Data", "type": "main", "index": 0},
+        {"node": "Get Week Contracts", "type": "main", "index": 0}
+      ]]
+    },
+    "Get Week Portfolio Data": {
+      "main": [[{"node": "Analyze Week Data", "type": "main", "index": 0}]]
+    },
+    "Get Week Contracts": {
+      "main": [[{"node": "Analyze Week Data", "type": "main", "index": 0}]]
+    }
+  },
+  "settings": {
+    "timezone": "America/Denver",
+    "errorWorkflow": "Dw9vcss7zB87KF3h",
+    "executionOrder": "v1"
+  }
+}
