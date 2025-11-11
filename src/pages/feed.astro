@@ -14,11 +14,21 @@ const { data: latestSnapshot } = await supabase
   .limit(1)
   .single();
 
-const { data: newsArticles } = await supabase
+const { data: rawNews } = await supabase
   .from('news_articles')
-  .select('*')
+  .select('id, title, description, url, topic, score, published_at')
   .order('published_at', { ascending: false })
-  .limit(20);
+  .limit(100); // grab a bit more, we’ll slice later
+
+const seen = new Set();
+const newsArticles = (rawNews || [])
+  .filter(article => {
+    if (!article.url) return false;
+    if (seen.has(article.url)) return false;
+    seen.add(article.url);
+    return true;
+  })
+  .slice(0, 50);
 
 const stats = latestSnapshot ? {
   dailyPL: parseFloat(latestSnapshot.daily_pl || 0),
@@ -27,6 +37,26 @@ const stats = latestSnapshot ? {
   topGainer: latestSnapshot.top_gainers?.[0],
   topLoser: latestSnapshot.top_losers?.[0]
 } : null;
+
+const { data: taglines, error } = await supabase
+  .from('dystopia_taglines')
+  .select('text')
+  .eq('active', true)
+  .order('created_at', { ascending: false })
+  .limit(20);
+
+// Normalize to an array of strings
+const taglineList = (taglines ?? [])
+  .map((row) => (typeof row === 'string' ? row : row.text))
+  .filter(Boolean);
+
+const fallback =
+  "No optimization, no engagement loops, just the slow leak of reality.";
+
+const tagline =
+  taglineList.length > 0
+    ? taglineList[Math.floor(Math.random() * taglineList.length)]
+    : fallback;
 ---
 
 <Layout title="The Dystopia Fund">
@@ -61,11 +91,12 @@ const stats = latestSnapshot ? {
     
     <div class="mt-8">
       <h2 class="text-white text-2xl font-bold mb-4">Curated News Free from the Algorithm</h2>
-      <div class="space-y-3">
+      <p class="text-gray-500 text-sm italic mb-6 leading-relaxed">{tagline}</p>
+ <div class="space-y-3">
         {newsArticles?.map(article => (
           <a href={article.url} target="_blank" rel="noopener" class="block bg-gray-900 rounded-lg p-3 hover:bg-gray-800 transition-colors">
             <h3 class="text-white text-sm font-semibold mb-1 leading-tight">{article.title}</h3>
-            <p class="text-gray-400 text-xs mb-2 line-clamp-2">{article.description}</p>
+
             <div class="flex items-center justify-between text-gray-500 text-xs">
               <div class="flex items-center space-x-3">
                 <span>{article.published_at}</span>
