@@ -24,14 +24,14 @@ const { data: blogPosts } = await supabase
   .limit(1);
 
 // Fake news, last 8 hours
-const eightHoursAgo = new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString();
+const eightHoursAgo = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
 
 const { data: newsArticles, error } = await supabase
   .from('fake_news')
   .select('*')
   .gte('created_at', eightHoursAgo)
-  .order('source', { ascending: true })         // sort by source first
-  .order('published_at', { ascending: false })  // then newest first within source
+  .order('source', { ascending: true })         // group sort
+  .order('published_at', { ascending: false })  // newest first within group
   .limit(400);
 
 // Group by source
@@ -41,7 +41,7 @@ const groups = (newsArticles ?? []).reduce((acc, article) => {
   return acc;
 }, {});
 
-// Sort sources alphabetically, but put "Unknown" at the end
+// Sort sources alphabetically, "Unknown" at the end
 const sortedSources = Object.keys(groups).sort((a, b) => {
   if (a === 'Unknown') return 1;
   if (b === 'Unknown') return -1;
@@ -56,13 +56,12 @@ const stats = latestSnapshot ? {
   topLoser: latestSnapshot.top_losers?.[0]
 } : null;
 
-// tiny helpers
+// helpers
 const fmtScore = (v) => {
   const n = parseFloat(v);
   return Number.isFinite(n) ? n.toFixed(1) : '—';
 };
 ---
-
 <Layout title="The Dystopia Fund">
   <div class="w-full max-w-6xl mx-auto px-4 py-6">
     {stats && (
@@ -121,21 +120,31 @@ const fmtScore = (v) => {
     <div class="mt-8">
       <h2 class="text-white text-2xl font-bold mb-4">Fake News, but It Could Be Worse.</h2>
 
-      {/* Render one container per source */}
-      <div class="space-y-8">
-        {sortedSources.map((source) => (
-          <section>
-            <h3 class="text-white text-xl font-semibold mb-3">
-              {source} <span class="text-gray-500 text-sm">({groups[source].length})</span>
-            </h3>
+      {/* Collapsible groups by source */}
+      <div class="space-y-4">
+        {sortedSources.map((source, i) => (
+          <details class="group bg-gray-900 rounded-lg border border-gray-800">
+            <summary class="cursor-pointer list-none px-4 py-3 flex items-center justify-between">
+              <span class="text-white text-lg font-semibold">
+                {source}
+                <span class="ml-2 text-gray-500 text-sm">({groups[source].length})</span>
+              </span>
+              {/* chevron */}
+              <svg
+                class="h-4 w-4 text-gray-400 transition-transform duration-200 group-open:rotate-180"
+                viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"
+              >
+                <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.17l3.71-2.94a.75.75 0 11.92 1.18l-4.25 3.37a.75.75 0 01-.92 0L5.21 8.41a.75.75 0 01.02-1.2z" clip-rule="evenodd" />
+              </svg>
+            </summary>
 
-            <div class="space-y-3">
+            <div class="border-t border-gray-800 px-4 py-3 space-y-3">
               {groups[source].map((article) => (
                 <a
                   href={article.url}
                   target="_blank"
                   rel="noopener"
-                  class="block bg-gray-900 rounded-lg p-3 hover:bg-gray-800 transition-colors"
+                  class="block bg-black/40 rounded-md p-3 hover:bg-black/60 transition-colors"
                 >
                   <h4 class="text-white text-sm font-semibold mb-1 leading-tight">
                     {article.title}
@@ -145,7 +154,7 @@ const fmtScore = (v) => {
                     {article.description}
                   </p>
 
-                  <div class="flex items-center justify-between text-gray-500 text-xs">
+                  <div class="flex items-center justify-between text-gray-500 text-[11px] sm:text-xs">
                     <div class="flex items-center gap-3">
                       <span>{new Date(article.published_at).toLocaleString()}</span>
                       <span class="text-gray-600">•</span>
@@ -158,7 +167,7 @@ const fmtScore = (v) => {
                 </a>
               ))}
             </div>
-          </section>
+          </details>
         ))}
       </div>
     </div>
